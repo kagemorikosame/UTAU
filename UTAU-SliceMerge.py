@@ -22,9 +22,19 @@ class UTAUTool:
         self.split_button.pack(pady=10)
 
     def open_merge_window(self):
+        # 元のウィンドウを最小化
+        self.root.withdraw()
+
         # 新しいウィンドウを作成
         merge_window = Toplevel(self.root)
         merge_window.title("音源結合 - ファイル選択")
+
+        # ウィンドウが閉じられたときに元のウィンドウを表示する
+        def on_close():
+            self.root.deiconify()  # 元のウィンドウを表示
+            merge_window.destroy()  # このウィンドウを閉じる
+
+        merge_window.protocol("WM_DELETE_WINDOW", on_close)
 
         # 音源フォルダ選択ボタン
         folder_label = Label(merge_window, text="フォルダ未選択")
@@ -48,9 +58,19 @@ class UTAUTool:
         confirm_button.pack(pady=10)
 
     def open_split_window(self):
+        # 元のウィンドウを最小化
+        self.root.withdraw()
+
         # 新しいウィンドウを作成
         split_window = Toplevel(self.root)
         split_window.title("音源分割 - ファイル選択")
+
+        # ウィンドウが閉じられたときに元のウィンドウを表示する
+        def on_close():
+            self.root.deiconify()  # 元のウィンドウを表示
+            split_window.destroy()  # このウィンドウを閉じる
+
+        split_window.protocol("WM_DELETE_WINDOW", on_close)
 
         # 結合済み音源ファイル選択ボタン
         combined_audio_label = Label(split_window, text="音源ファイル未選択")
