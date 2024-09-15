@@ -1,6 +1,6 @@
 import os
 import json
-from tkinter import Tk, Button, filedialog, messagebox, Label, Toplevel
+from tkinter import Tk, Button, filedialog, messagebox, Label, Toplevel, Text, Scrollbar, RIGHT, Y, END, Frame
 from pydub import AudioSegment  # インストール必須   $ pip install pydub
 
 
@@ -33,7 +33,9 @@ class UTAUTool:
         def select_folder():
             folder_path = filedialog.askdirectory(title="音源フォルダを選択")
             if folder_path:
-                folder_label.config(text=f"選択されたフォルダ: {folder_path}")
+                # ファイル名のみを表示
+                folder_label.config(text=f"選択されたフォルダ: {
+                                    os.path.basename(folder_path)}")
                 merge_window.folder_path = folder_path
 
         select_folder_button = Button(
@@ -42,7 +44,7 @@ class UTAUTool:
 
         # 結合処理開始ボタン
         confirm_button = Button(merge_window, text="確認して結合",
-                                command=lambda: self.merge_audio_files(merge_window))
+                                command=lambda: self.confirm_merge(merge_window))
         confirm_button.pack(pady=10)
 
     def open_split_window(self):
@@ -58,8 +60,9 @@ class UTAUTool:
             combined_audio_path = filedialog.askopenfilename(
                 title="結合済み音源を選択", filetypes=[("WAV files", "*.wav")])
             if combined_audio_path:
+                # ファイル名のみを表示
                 combined_audio_label.config(
-                    text=f"選択された音源: {combined_audio_path}")
+                    text=f"選択された音源: {os.path.basename(combined_audio_path)}")
                 split_window.combined_audio_path = combined_audio_path
 
         combined_audio_button = Button(
@@ -74,7 +77,9 @@ class UTAUTool:
             restore_file_path = filedialog.askopenfilename(
                 title="復元ファイルを選択", filetypes=[("JSON files", "*.json")])
             if restore_file_path:
-                restore_label.config(text=f"選択された復元ファイル: {restore_file_path}")
+                # ファイル名のみを表示
+                restore_label.config(text=f"選択された復元ファイル: {
+                                     os.path.basename(restore_file_path)}")
                 split_window.restore_file_path = restore_file_path
 
         restore_file_button = Button(
@@ -88,7 +93,9 @@ class UTAUTool:
         def select_save_folder():
             save_folder_path = filedialog.askdirectory(title="保存先フォルダを選択")
             if save_folder_path:
-                save_folder_label.config(text=f"選択された保存先: {save_folder_path}")
+                # フォルダ名のみを表示
+                save_folder_label.config(
+                    text=f"選択された保存先: {os.path.basename(save_folder_path)}")
                 split_window.save_folder_path = save_folder_path
 
         save_folder_button = Button(
@@ -97,8 +104,93 @@ class UTAUTool:
 
         # 分割処理開始ボタン
         confirm_button = Button(split_window, text="確認して分割",
-                                command=lambda: self.split_audio_files(split_window))
+                                command=lambda: self.confirm_split(split_window))
         confirm_button.pack(pady=10)
+
+    def confirm_merge(self, window):
+        folder_path = getattr(window, 'folder_path', None)
+        if not folder_path:
+            messagebox.showerror("エラー", "フォルダが選択されていません。")
+            return
+
+        # 確認画面の表示
+        audio_files = [f for f in os.listdir(
+            folder_path) if f.endswith(('.wav', '.mp3'))]
+        if not audio_files:
+            messagebox.showerror("エラー", "選択したフォルダに音声ファイルが見つかりません。")
+            return
+
+        # 新しいウィンドウで確認メッセージを表示
+        confirm_window = Toplevel(self.root)
+        confirm_window.title("結合確認")
+        confirm_window.geometry("300x300")  # ウィンドウサイズを固定
+
+        # フレームを作成してスクロールバーとテキストウィジェットを配置
+        frame = Frame(confirm_window)
+        frame.pack(fill='both', expand=True)
+
+        scrollbar = Scrollbar(frame)
+        scrollbar.pack(side=RIGHT, fill=Y)
+
+        text_area = Text(frame, wrap='none',
+                         yscrollcommand=scrollbar.set, width=40, height=15)
+        text_area.pack(expand=True, fill='both')
+        scrollbar.config(command=text_area.yview)
+
+        # 確認メッセージを表示
+        confirm_message = "次のファイルを結合します:\n" + "\n".join(audio_files)
+        text_area.insert(END, confirm_message)
+        text_area.config(state='disabled')  # テキストエリアを編集不可にする
+
+        # 実行・キャンセルボタン
+        confirm_button = Button(confirm_window, text="実行", command=lambda: [
+                                self.merge_audio_files(window), confirm_window.destroy()])
+        confirm_button.pack(pady=5)
+
+        cancel_button = Button(confirm_window, text="キャンセル",
+                               command=confirm_window.destroy)
+        cancel_button.pack(pady=5)
+
+    def confirm_split(self, window):
+        combined_audio_path = getattr(window, 'combined_audio_path', None)
+        restore_file_path = getattr(window, 'restore_file_path', None)
+        save_folder_path = getattr(window, 'save_folder_path', None)
+
+        if not combined_audio_path or not restore_file_path or not save_folder_path:
+            messagebox.showerror("エラー", "すべてのファイルが選択されていません。")
+            return
+
+        # 新しいウィンドウで確認メッセージを表示
+        confirm_window = Toplevel(self.root)
+        confirm_window.title("分割確認")
+        confirm_window.geometry("300x200")  # ウィンドウサイズを固定
+
+        # フレームを作成してスクロールバーとテキストウィジェットを配置
+        frame = Frame(confirm_window)
+        frame.pack(fill='both', expand=True)
+
+        scrollbar = Scrollbar(frame)
+        scrollbar.pack(side=RIGHT, fill=Y)
+
+        text_area = Text(frame, wrap='none',
+                         yscrollcommand=scrollbar.set, width=40, height=10)
+        text_area.pack(expand=True, fill='both')
+        scrollbar.config(command=text_area.yview)
+
+        # 確認メッセージを表示
+        confirm_message = f"音源ファイル: {os.path.basename(combined_audio_path)}\n復元ファイル: {os.path.basename(
+            restore_file_path)}\n保存先: {os.path.basename(save_folder_path)}\nこれらのファイルで分割を行いますか？"
+        text_area.insert(END, confirm_message)
+        text_area.config(state='disabled')  # テキストエリアを編集不可にする
+
+        # 実行・キャンセルボタン
+        confirm_button = Button(confirm_window, text="実行", command=lambda: [
+                                self.split_audio_files(window), confirm_window.destroy()])
+        confirm_button.pack(pady=5)
+
+        cancel_button = Button(confirm_window, text="キャンセル",
+                               command=confirm_window.destroy)
+        cancel_button.pack(pady=5)
 
     def merge_audio_files(self, window):
         folder_path = getattr(window, 'folder_path', None)
