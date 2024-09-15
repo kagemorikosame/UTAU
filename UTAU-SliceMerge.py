@@ -1,6 +1,6 @@
 import os
 import json
-from tkinter import Tk, Button, filedialog, messagebox
+from tkinter import Tk, Button, filedialog, messagebox, Label, Toplevel
 from pydub import AudioSegment  # インストール必須   $ pip install pydub
 
 
@@ -13,18 +13,97 @@ class UTAUTool:
     def create_widgets(self):
         # 音源結合ボタン
         self.merge_button = Button(
-            self.root, text="音源結合", command=self.merge_audio_files)
+            self.root, text="音源結合", command=self.open_merge_window)
         self.merge_button.pack(pady=10)
 
         # 音源分割ボタン
         self.split_button = Button(
-            self.root, text="音源分割", command=self.split_audio_files)
+            self.root, text="音源分割", command=self.open_split_window)
         self.split_button.pack(pady=10)
 
-    def merge_audio_files(self):
-        # フォルダ選択ダイアログを開く
-        folder_path = filedialog.askdirectory(title="音源フォルダを選択")
+    def open_merge_window(self):
+        # 新しいウィンドウを作成
+        merge_window = Toplevel(self.root)
+        merge_window.title("音源結合 - ファイル選択")
+
+        # 音源フォルダ選択ボタン
+        folder_label = Label(merge_window, text="フォルダ未選択")
+        folder_label.pack(pady=5)
+
+        def select_folder():
+            folder_path = filedialog.askdirectory(title="音源フォルダを選択")
+            if folder_path:
+                folder_label.config(text=f"選択されたフォルダ: {folder_path}")
+                merge_window.folder_path = folder_path
+
+        select_folder_button = Button(
+            merge_window, text="フォルダ選択", command=select_folder)
+        select_folder_button.pack(pady=10)
+
+        # 結合処理開始ボタン
+        confirm_button = Button(merge_window, text="確認して結合",
+                                command=lambda: self.merge_audio_files(merge_window))
+        confirm_button.pack(pady=10)
+
+    def open_split_window(self):
+        # 新しいウィンドウを作成
+        split_window = Toplevel(self.root)
+        split_window.title("音源分割 - ファイル選択")
+
+        # 結合済み音源ファイル選択ボタン
+        combined_audio_label = Label(split_window, text="音源ファイル未選択")
+        combined_audio_label.pack(pady=5)
+
+        def select_combined_audio():
+            combined_audio_path = filedialog.askopenfilename(
+                title="結合済み音源を選択", filetypes=[("WAV files", "*.wav")])
+            if combined_audio_path:
+                combined_audio_label.config(
+                    text=f"選択された音源: {combined_audio_path}")
+                split_window.combined_audio_path = combined_audio_path
+
+        combined_audio_button = Button(
+            split_window, text="音源ファイル選択", command=select_combined_audio)
+        combined_audio_button.pack(pady=5)
+
+        # 復元ファイル選択ボタン
+        restore_label = Label(split_window, text="復元ファイル未選択")
+        restore_label.pack(pady=5)
+
+        def select_restore_file():
+            restore_file_path = filedialog.askopenfilename(
+                title="復元ファイルを選択", filetypes=[("JSON files", "*.json")])
+            if restore_file_path:
+                restore_label.config(text=f"選択された復元ファイル: {restore_file_path}")
+                split_window.restore_file_path = restore_file_path
+
+        restore_file_button = Button(
+            split_window, text="復元ファイル選択", command=select_restore_file)
+        restore_file_button.pack(pady=5)
+
+        # 保存先フォルダ選択ボタン
+        save_folder_label = Label(split_window, text="保存先フォルダ未選択")
+        save_folder_label.pack(pady=5)
+
+        def select_save_folder():
+            save_folder_path = filedialog.askdirectory(title="保存先フォルダを選択")
+            if save_folder_path:
+                save_folder_label.config(text=f"選択された保存先: {save_folder_path}")
+                split_window.save_folder_path = save_folder_path
+
+        save_folder_button = Button(
+            split_window, text="保存先フォルダ選択", command=select_save_folder)
+        save_folder_button.pack(pady=5)
+
+        # 分割処理開始ボタン
+        confirm_button = Button(split_window, text="確認して分割",
+                                command=lambda: self.split_audio_files(split_window))
+        confirm_button.pack(pady=10)
+
+    def merge_audio_files(self, window):
+        folder_path = getattr(window, 'folder_path', None)
         if not folder_path:
+            messagebox.showerror("エラー", "フォルダが選択されていません。")
             return
 
         # フォルダ内の音声ファイルを結合
@@ -40,7 +119,6 @@ class UTAUTool:
         for audio_file in audio_files:
             audio_segment = AudioSegment.from_file(audio_file)
             combined_audio += audio_segment
-            # 復元情報を保存
             restore_data.append({
                 "file_name": os.path.basename(audio_file),
                 "duration": len(audio_segment)
@@ -51,38 +129,25 @@ class UTAUTool:
             defaultextension=".wav", filetypes=[("WAV files", "*.wav")])
         if output_path:
             combined_audio.export(output_path, format="wav")
-            # 復元情報を保存
             restore_file_path = output_path + ".json"
             with open(restore_file_path, 'w') as restore_file:
                 json.dump(restore_data, restore_file)
             messagebox.showinfo("完了", "音源の結合と復元ファイルの保存が完了しました。")
 
-    def split_audio_files(self):
-        # 結合済みの音源ファイルを選択
-        combined_audio_path = filedialog.askopenfilename(
-            title="結合済み音源を選択", filetypes=[("WAV files", "*.wav")])
-        if not combined_audio_path:
+    def split_audio_files(self, window):
+        combined_audio_path = getattr(window, 'combined_audio_path', None)
+        restore_file_path = getattr(window, 'restore_file_path', None)
+        save_folder_path = getattr(window, 'save_folder_path', None)
+
+        if not combined_audio_path or not restore_file_path or not save_folder_path:
+            messagebox.showerror("エラー", "すべてのファイルが選択されていません。")
             return
 
-        # 復元ファイルを選択
-        restore_file_path = filedialog.askopenfilename(
-            title="復元ファイルを選択", filetypes=[("JSON files", "*.json")])
-        if not restore_file_path:
-            return
-
-        # 保存先フォルダを選択
-        save_folder_path = filedialog.askdirectory(title="音源の保存先フォルダを選択")
-        if not save_folder_path:
-            return
-
-        # 結合済みの音源をロード
         combined_audio = AudioSegment.from_file(combined_audio_path)
 
-        # 復元ファイルを読み込む
         with open(restore_file_path, 'r') as restore_file:
             restore_data = json.load(restore_file)
 
-        # 音源を分割して保存
         start = 0
         for data in restore_data:
             duration = data['duration']
