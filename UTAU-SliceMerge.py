@@ -7,19 +7,24 @@ from pydub import AudioSegment  # インストール必須   $ pip install pydub
 class UTAUTool:
     def __init__(self, root):
         self.root = root
-        self.root.title("UTAU音源_結合・分割ソフト")
+        self.root.title("UTAU_結合／分割")
+
+        # ウィンドウサイズを自動調整
+        self.root.resizable(True, True)
+
         self.create_widgets()
 
     def create_widgets(self):
+        # ウィジェットの配置により、ウィンドウサイズが自動調整される
         # 音源結合ボタン
         self.merge_button = Button(
-            self.root, text="音源結合", command=self.open_merge_window)
-        self.merge_button.pack(pady=10)
+            self.root, text="音源結合（音源データを1つにまとめる）", command=self.open_merge_window)
+        self.merge_button.pack(pady=10, padx=10)  # padxを追加して横方向の余白を追加
 
         # 音源分割ボタン
         self.split_button = Button(
-            self.root, text="音源分割", command=self.open_split_window)
-        self.split_button.pack(pady=10)
+            self.root, text="音源分割（復元用ファイルを使用して再分割）", command=self.open_split_window)
+        self.split_button.pack(pady=10, padx=10)  # padxを追加して横方向の余白を追加
 
     def open_merge_window(self):
         # 元のウィンドウを最小化
@@ -28,6 +33,9 @@ class UTAUTool:
         # 新しいウィンドウを作成
         merge_window = Toplevel(self.root)
         merge_window.title("音源結合 - ファイル選択")
+
+        # 新しいウィンドウのサイズをオブジェクトのサイズに合わせる
+        merge_window.resizable(True, True)
 
         # ウィンドウが閉じられたときに元のウィンドウを表示する
         def on_close():
@@ -38,7 +46,7 @@ class UTAUTool:
 
         # 音源フォルダ選択ボタン
         folder_label = Label(merge_window, text="フォルダ未選択")
-        folder_label.pack(pady=5)
+        folder_label.pack(pady=5, padx=5)
 
         def select_folder():
             folder_path = filedialog.askdirectory(title="音源フォルダを選択")
@@ -50,12 +58,12 @@ class UTAUTool:
 
         select_folder_button = Button(
             merge_window, text="フォルダ選択", command=select_folder)
-        select_folder_button.pack(pady=10)
+        select_folder_button.pack(pady=10, padx=10)
 
         # 結合処理開始ボタン
         confirm_button = Button(merge_window, text="確認して結合",
                                 command=lambda: self.confirm_merge(merge_window))
-        confirm_button.pack(pady=10)
+        confirm_button.pack(pady=10, padx=10)
 
     def open_split_window(self):
         # 元のウィンドウを最小化
@@ -64,6 +72,9 @@ class UTAUTool:
         # 新しいウィンドウを作成
         split_window = Toplevel(self.root)
         split_window.title("音源分割 - ファイル選択")
+
+        # 新しいウィンドウのサイズをオブジェクトのサイズに合わせる
+        split_window.resizable(True, True)
 
         # ウィンドウが閉じられたときに元のウィンドウを表示する
         def on_close():
@@ -74,7 +85,7 @@ class UTAUTool:
 
         # 結合済み音源ファイル選択ボタン
         combined_audio_label = Label(split_window, text="音源ファイル未選択")
-        combined_audio_label.pack(pady=5)
+        combined_audio_label.pack(pady=5, padx=5)
 
         def select_combined_audio():
             combined_audio_path = filedialog.askopenfilename(
@@ -87,11 +98,11 @@ class UTAUTool:
 
         combined_audio_button = Button(
             split_window, text="音源ファイル選択", command=select_combined_audio)
-        combined_audio_button.pack(pady=5)
+        combined_audio_button.pack(pady=5, padx=5)
 
         # 復元ファイル選択ボタン
         restore_label = Label(split_window, text="復元ファイル未選択")
-        restore_label.pack(pady=5)
+        restore_label.pack(pady=5, padx=5)
 
         def select_restore_file():
             restore_file_path = filedialog.askopenfilename(
@@ -104,11 +115,11 @@ class UTAUTool:
 
         restore_file_button = Button(
             split_window, text="復元ファイル選択", command=select_restore_file)
-        restore_file_button.pack(pady=5)
+        restore_file_button.pack(pady=5, padx=5)
 
         # 保存先フォルダ選択ボタン
         save_folder_label = Label(split_window, text="保存先フォルダ未選択")
-        save_folder_label.pack(pady=5)
+        save_folder_label.pack(pady=5, padx=5)
 
         def select_save_folder():
             save_folder_path = filedialog.askdirectory(title="保存先フォルダを選択")
@@ -120,12 +131,12 @@ class UTAUTool:
 
         save_folder_button = Button(
             split_window, text="保存先フォルダ選択", command=select_save_folder)
-        save_folder_button.pack(pady=5)
+        save_folder_button.pack(pady=5, padx=5)
 
         # 分割処理開始ボタン
         confirm_button = Button(split_window, text="確認して分割",
                                 command=lambda: self.confirm_split(split_window))
-        confirm_button.pack(pady=10)
+        confirm_button.pack(pady=10, padx=10)
 
     def confirm_merge(self, window):
         folder_path = getattr(window, 'folder_path', None)
@@ -143,7 +154,9 @@ class UTAUTool:
         # 新しいウィンドウで確認メッセージを表示
         confirm_window = Toplevel(self.root)
         confirm_window.title("結合確認")
-        confirm_window.geometry("300x300")  # ウィンドウサイズを固定
+
+        # 新しいウィンドウのサイズをオブジェクトのサイズに合わせる
+        confirm_window.resizable(True, True)
 
         # フレームを作成してスクロールバーとテキストウィジェットを配置
         frame = Frame(confirm_window)
@@ -183,7 +196,9 @@ class UTAUTool:
         # 新しいウィンドウで確認メッセージを表示
         confirm_window = Toplevel(self.root)
         confirm_window.title("分割確認")
-        confirm_window.geometry("300x200")  # ウィンドウサイズを固定
+
+        # 新しいウィンドウのサイズをオブジェクトのサイズに合わせる
+        confirm_window.resizable(True, True)
 
         # フレームを作成してスクロールバーとテキストウィジェットを配置
         frame = Frame(confirm_window)
