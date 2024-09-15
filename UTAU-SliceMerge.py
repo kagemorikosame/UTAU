@@ -70,6 +70,11 @@ class UTAUTool:
         if not restore_file_path:
             return
 
+        # 保存先フォルダを選択
+        save_folder_path = filedialog.askdirectory(title="音源の保存先フォルダを選択")
+        if not save_folder_path:
+            return
+
         # 結合済みの音源をロード
         combined_audio = AudioSegment.from_file(combined_audio_path)
 
@@ -83,8 +88,7 @@ class UTAUTool:
             duration = data['duration']
             file_name = data['file_name']
             split_audio = combined_audio[start:start + duration]
-            output_file_path = os.path.join(
-                os.path.dirname(combined_audio_path), file_name)
+            output_file_path = os.path.join(save_folder_path, file_name)
             split_audio.export(output_file_path, format="wav")
             start += duration
 
